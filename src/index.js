@@ -16,33 +16,63 @@ class SeekStormInstantSearchAdapter {
     this.indexMap = config.indexMap || {};
     this.facetTypes = config.facetTypes || {};
     this.realtime = config.realtime ?? false;
+
+    // Numeric field types, used to know which facetTypes entries are range facets
+    // (these are the ones whose min/max we need for rangeSlider bounds).
+    this.numericFieldTypes = new Set([
+      'U8', 'U16', 'U32', 'U64', 'I8', 'I16', 'I32', 'I64', 'F32', 'F64', 'Timestamp',
+    ]);
+
+    this.minMaxCacheMs = config.minMaxCacheMs ?? 60_000; // refresh at most once a minute
+    this._minMaxCache = new Map(); // indexId -> { data, fetchedAt }
   }
 
-  async search(requests) {
+  // GET /api/v1/index/{indexId} -> read facets_minmax, with a small TTL cache
+  // so we're not hitting this on every keystroke.
+  async getFacetsMinMax(indexId) {
+    const cached = this._minMaxCache.get(indexId);
+    if (cached && Date.now() - cached.fetchedAt < this.minMaxCacheMs) {
+      return cached.data;
+    }
+
+    const res = await fetch(`${this.host}/api/v1/index/${indexId}`, {
+      method: 'GET',
+      headers: { apikey: this.apiKey },
+    });
+    if (!res.ok) {
+      console.warn(`Failed to fetch index info for facets_minmax: ${res.status}`);
+      return cached?.data || {};
+    }
+    const info = await res.json();
+    const data = info.facets_minmax || {};
+    this._minMaxCache.set(indexId, { data, fetchedAt: Date.now() });
+    return data;
+  }
+
+   async search(requests) {
     const seekStormQueries = requests.map((req) => this.mapAlgoliaToSeekStorm(req));
 
     try {
       const responses = await Promise.all(
-        seekStormQueries.map((q) =>
-          fetch(`${this.host}/api/v1/index/${q.indexId}/query`, {
-            method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-              apikey: this.apiKey, // NOTE: plain header, not Authorization: Bearer
-            },
-            body: JSON.stringify(q.payload),
-          }).then((res) => {
-            if (!res.ok) {
-              throw new Error(`SeekStorm error! Status: ${res.status}`);
-            }
-            return res.json();
-          })
-        )
+        seekStormQueries.map(async (q) => {
+          const [queryRes, minMax] = await Promise.all([
+            fetch(`${this.host}/api/v1/index/${q.indexId}/query`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', apikey: this.apiKey },
+              body: JSON.stringify(q.payload),
+            }).then((res) => {
+              if (!res.ok) throw new Error(`SeekStorm error! Status: ${res.status}`);
+              return res.json();
+            }),
+            this.getFacetsMinMax(q.indexId),
+          ]);
+          return { queryRes, minMax };
+        })
       );
 
       return {
-        results: responses.map((data, index) =>
-          this.mapSeekStormToAlgolia(data, requests[index])
+        results: responses.map(({ queryRes, minMax }, index) =>
+          this.mapSeekStormToAlgolia(queryRes, requests[index], minMax)
         ),
       };
     } catch (error) {
@@ -147,51 +177,65 @@ class SeekStormInstantSearchAdapter {
 
   // Translates Algolia's facetFilters (["brand:Apple", ["type:Laptop","type:Tablet"]])
   // and numericFilters (["price>=10", "price<=50"]) into SeekStorm's typed facet_filter.
-  buildFacetFilter(params) {
-    const filters = [];
-    const byField = {}; // field -> Set of accepted string values (OR within a field)
+buildFacetFilter(params) {
+  const filters = [];
+  const byField = {};
 
-    const addStringFilter = (attr, value) => {
-      byField[attr] = byField[attr] || new Set();
-      byField[attr].add(value);
-    };
+  const addStringFilter = (attr, value) => {
+    byField[attr] = byField[attr] || new Set();
+    byField[attr].add(value);
+  };
 
-    (params.facetFilters || []).forEach((entry) => {
-      const items = Array.isArray(entry) ? entry : [entry];
-      items.forEach((clause) => {
-        const [attr, value] = clause.split(':');
-        addStringFilter(attr, value);
-      });
+  (params.facetFilters || []).forEach((entry) => {
+    const items = Array.isArray(entry) ? entry : [entry];
+    items.forEach((clause) => {
+      const [attr, value] = clause.split(':');
+      addStringFilter(attr, value);
     });
+  });
 
-    Object.entries(byField).forEach(([field, values]) => {
-      const fieldType = this.facetTypes[field];
-      if (!fieldType) {
-        console.warn(`No facetTypes entry for "${field}" — skipping filter.`);
-        return;
-      }
-      filters.push({ [fieldType]: { field, filter: Array.from(values) } });
-    });
+  // Confirmed: FacetFilter's string variants are tagged by the exact schema
+  // field_type (String16 / String32 / StringSet16 / StringSet32) — no
+  // simplification. Use facetTypes[field] directly, same as buildQueryFacets.
+  Object.entries(byField).forEach(([field, values]) => {
+    const fieldType = this.facetTypes[field];
+    if (!fieldType) {
+      console.warn(`No facetTypes entry for "${field}" — skipping filter.`);
+      return;
+    }
+    filters.push({ [fieldType]: { field, filter: Array.from(values) } });
+  });
 
-    // Numeric range filter, e.g. price rangeSlider -> ["price>=10","price<=50"]
-    const numericRanges = {};
-    (params.numericFilters || []).forEach((clause) => {
-      const match = clause.match(/^(\w+)(>=|<=)(.+)$/);
-      if (!match) return;
-      const [, field, op, value] = match;
-      numericRanges[field] = numericRanges[field] || [null, null];
-      if (op === '>=') numericRanges[field][0] = Number(value);
-      if (op === '<=') numericRanges[field][1] = Number(value);
-    });
+  // Numeric range filter, e.g. price rangeSlider -> ["price>=10","price<=50"]
+  // Confirmed shape: FacetFilter::F64{field, filter: Range<f64>} -> {start, end}.
+  // Range is HALF-OPEN / exclusive on `end` — there is no inclusive variant in
+  // the enum, so a product priced exactly at the slider's current max will be
+  // excluded unless we compensate here.
+  const numericRanges = {};
+  (params.numericFilters || []).forEach((clause) => {
+    const match = clause.match(/^(\w+)(>=|<=)(.+)$/);
+    if (!match) return;
+    const [, field, op, value] = match;
+    numericRanges[field] = numericRanges[field] || { start: null, end: null };
+    if (op === '>=') numericRanges[field].start = Number(value);
+    if (op === '<=') numericRanges[field].end = Number(value);
+  });
 
-    Object.entries(numericRanges).forEach(([field, [min, max]]) => {
-      const fieldType = this.facetTypes[field];
-      if (!fieldType) return;
-      filters.push({ [fieldType]: { field, filter: [min, max] } });
-    });
+  Object.entries(numericRanges).forEach(([field, range]) => {
+    const fieldType = this.facetTypes[field]; // e.g. 'F64'
+    if (!fieldType) return;
+    if (range.end !== null) {
+      // Nudge the upper bound past the requested max so it's included despite
+      // the exclusive Range semantics. Epsilon should be smaller than any
+      // meaningful price difference in your dataset (adjust for your currency's
+      // smallest denomination, or use a bigger nudge for integer-valued fields).
+      range.end += 0.01;
+    }
+    filters.push({ [fieldType]: { field, filter: range } });
+  });
 
-    return filters;
-  }
+  return filters;
+}
 
   buildQueryFacets(facetFields) {
     if (!facetFields) return [];
@@ -207,15 +251,22 @@ class SeekStormInstantSearchAdapter {
       .filter(Boolean);
   }
 
-  mapSeekStormToAlgolia(seekStormData, algoliaRequest) {
+  mapSeekStormToAlgolia(seekStormData, algoliaRequest, facetsMinMax = {}) {
     const hitsPerPage = algoliaRequest.params.hitsPerPage || 20;
 
-    // VERIFY: field names below (hits / _id / fields / result_count / time_ms) are
-    // not confirmed against a live response — check your server's actual JSON
-    // and adjust these lookups accordingly.
     const rawHits = seekStormData.hits || seekStormData.results || [];
     const totalResults =
       seekStormData.result_count ?? seekStormData.total_results ?? rawHits.length;
+
+    // Only surface facets_stats for fields the widget actually asked about
+    // (Algolia's numericFilters/rangeSlider config), and only numeric field types.
+    const facetsStats = {};
+    Object.entries(facetsMinMax).forEach(([field, { min, max }]) => {
+      const fieldType = this.facetTypes[field];
+      if (fieldType && this.numericFieldTypes.has(fieldType)) {
+        facetsStats[field] = { min, max };
+      }
+    });
 
     return {
       hits: rawHits.map((h) => ({
@@ -228,6 +279,7 @@ class SeekStormInstantSearchAdapter {
       nbPages: Math.ceil(totalResults / hitsPerPage),
       hitsPerPage,
       facets: this.formatFacets(seekStormData.facets),
+      facets_stats: facetsStats,
       processingTimeMS: seekStormData.time_ms ?? 1,
     };
   }
