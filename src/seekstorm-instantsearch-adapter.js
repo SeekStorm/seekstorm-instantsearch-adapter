@@ -106,11 +106,12 @@ class SeekStormInstantSearchAdapter {
           query: params.query || '',
           offset: 0,
           length: 0, // we only want facet values, not hits
-          result_type: 'Count',
+          result_type: 'TopkCount',
           realtime: this.realtime,
           query_facets: [
             { [fieldType]: { field: facetName, prefix: facetQuery || '', length: 20 } },
           ],
+          enable_empty_query: true, // allow empty query to return all facet values
         };
 
         const res = await fetch(`${this.host}/api/v1/index/${indexId}/query`, {
@@ -122,8 +123,10 @@ class SeekStormInstantSearchAdapter {
         const data = await res.json();
 
         // VERIFY: adjust to the real facet response shape once confirmed.
-        const facetEntry = (data.facets || []).find((f) => f.field === facetName);
-        const values = facetEntry?.values || [];
+        const facets = data.facets;
+        const values = Array.isArray(facets)
+          ? facets.find((f) => f.field === facetName)?.values || []
+          : facets?.[facetName] || [];
         return {
           facetHits: values.map((v) => ({
             value: v.value,
@@ -169,6 +172,7 @@ class SeekStormInstantSearchAdapter {
       length: hitsPerPage,
       result_type: 'TopkCount',
       realtime: this.realtime,
+      enable_empty_query: true, // allow empty query to return all facet values
     };
 
     const facetFilter = this.buildFacetFilter(params);
@@ -254,6 +258,10 @@ buildFacetFilter(params) {
           console.warn(`No facetTypes entry for "${field}" — skipping facet request.`);
           return null;
         }
+        // Numeric QueryFacet variants use a {range_type, ranges} shape, not
+        // {prefix, length} — numeric min/max is fetched separately via
+        // getFacetsMinMax, so skip them here rather than sending a malformed payload.
+        if (this.numericFieldTypes.has(fieldType)) return null;
         return { [fieldType]: { field, prefix: '', length: 1000 } };
       })
       .filter(Boolean);
@@ -295,10 +303,17 @@ buildFacetFilter(params) {
   formatFacets(seekStormFacets) {
     const algoliaFacets = {};
     if (!seekStormFacets) return algoliaFacets;
-    seekStormFacets.forEach((f) => {
-      algoliaFacets[f.field] = {};
-      (f.values || []).forEach((v) => {
-        algoliaFacets[f.field][v.value] = v.count;
+
+    // Normalize both possible shapes: an array of {field, values: [{value, count}]}
+    // entries, or an object map { field: [{value, count}, ...] }.
+    const entries = Array.isArray(seekStormFacets)
+      ? seekStormFacets.map((f) => [f.field, f.values || []])
+      : Object.entries(seekStormFacets);
+
+    entries.forEach(([field, values]) => {
+      algoliaFacets[field] = {};
+      (values || []).forEach((v) => {
+        algoliaFacets[field][v.value] = v.count;
       });
     });
     return algoliaFacets;
