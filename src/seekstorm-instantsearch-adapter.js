@@ -27,6 +27,14 @@ class SeekStormInstantSearchAdapter {
     this._minMaxCache = new Map(); // indexId -> { data, fetchedAt }
   }
 
+  // InstantSearch requires a `searchClient` object exposing `search`/`searchForFacetValues`.
+  get searchClient() {
+    return {
+      search: this.search.bind(this),
+      searchForFacetValues: this.searchForFacetValues.bind(this),
+    };
+  }
+
   // GET /api/v1/index/{indexId} -> read facets_minmax, with a small TTL cache
   // so we're not hitting this on every keystroke.
   async getFacetsMinMax(indexId) {

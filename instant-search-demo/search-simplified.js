@@ -12,6 +12,12 @@ app({
   apiKey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
   indexId: 0,   // SeekStorm indices are addressed by ID, not name
   indexName: 'instant_search',          // keep for widget wiring / routing
+  facetTypes: {
+    brand: 'String32',
+    categories: 'StringSet32',
+    type: 'String32',
+    price: 'F64',
+  },
   // searchParameters: { hitsPerPage: 10 },
 
 });
@@ -25,9 +31,10 @@ function app(opts) {
   // });
 
   const seekStormAdapter = new SeekStormInstantSearchAdapter({
-    server: opts.server,
+    host: opts.server,
     apiKey: opts.apiKey,
-    indexId: opts.indexId,
+    indexMap: { [opts.indexName]: opts.indexId },
+    facetTypes: opts.facetTypes,
   });
 
   const search = instantsearch({
