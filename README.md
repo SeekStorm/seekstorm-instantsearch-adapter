@@ -111,13 +111,13 @@ content-type: application/json
 }
 ```
 
-4. Ingest the *bestbuy_dataset_light.json* dataset via the console command "ingest" or via the REST API.
+4. Clone this repository (includes both seekstorm-instantsearch-adapter and instant-search-demo)
+5. Ingest the *bestbuy_dataset_light.json* dataset via the console command "ingest" or via the REST API.
 
 ```shell
 ingest {...full local path...}\seekstorm-instantsearch-adapter\instant-search-demo\dataset_import\bestbuy_dataset_light.json
 ```
 
-5. Clone this repository (includes both seekstorm-instantsearch-adapter and instant-search-demo)
 6. Start the demo by opening [instant-search-demo\index-simplified.html](instant-search-demo\index-simplified.html) in the browser.
 7. We just demonstrated how the seekstorm-instantsearch-adapter allows you to switch any search frontend using Algolia InstantSearch.js  
 from the Algolia API backend to a self-hosted SeekStorm server or the SeekStorm search-as-a-service.
