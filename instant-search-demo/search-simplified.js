@@ -8,10 +8,10 @@ app({
   //   hitsPerPage: 10,
   // },
 
-  server: 'http://localhost:80', // or your self-hosted seekstorm_server URL
+  server: 'http://localhost:80', // seekstorm_server URL
   apiKey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
   indexId: 0,   // SeekStorm indices are addressed by ID, not name
-  indexName: 'instant_search',          // keep for widget wiring / routing
+  indexName: 'instant_search',    // keep for widget wiring / routing
   facetTypes: {
     brand: 'String32',
     categories: 'StringSet32',
