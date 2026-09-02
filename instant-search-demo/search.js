@@ -1,12 +1,25 @@
 /* global instantsearch algoliasearch */
 
 app({
-  appId: 'latency',
-  apiKey: '6be0576ff61c053d5f9a3225e2a90f76',
-  indexName: 'instant_search',
-  searchParameters: {
-    hitsPerPage: 10,
+
+// appId: 'latency',
+ // apiKey: '6be0576ff61c053d5f9a3225e2a90f76',
+ // indexName: 'instant_search',
+ // searchParameters: {
+ //    hitsPerPage: 10,
+ //  },
+
+  server: 'http://localhost:80', // seekstorm_server URL
+  apiKey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  indexId: 0,   // SeekStorm indices are addressed by ID, not name
+  indexName: 'instant_search',    // keep for widget wiring / routing
+  facetTypes: {
+    brand: 'String32',
+    categories: 'StringSet32',
+    type: 'String32',
+    price: 'F64',
   },
+
 });
 
 function app(opts) {
@@ -15,11 +28,24 @@ function app(opts) {
   //  Init
   //
   // ---------------------
+  // const search = instantsearch({
+  //   searchClient: algoliasearch(opts.appId, opts.apiKey),
+  //   indexName: opts.indexName,
+  //   routing: true,
+  //   searchFunction: opts.searchFunction,
+  // });
+
+  const seekStormAdapter = new SeekStormInstantSearchAdapter({
+    host: opts.server,
+    apiKey: opts.apiKey,
+    indexMap: { [opts.indexName]: opts.indexId },
+    facetTypes: opts.facetTypes,
+  });
+
   const search = instantsearch({
-    searchClient: algoliasearch(opts.appId, opts.apiKey),
+    searchClient: seekStormAdapter.searchClient,
     indexName: opts.indexName,
     routing: true,
-    searchFunction: opts.searchFunction,
   });
 
   // ---------------------
