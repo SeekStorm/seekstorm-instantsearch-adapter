@@ -57,23 +57,21 @@ class SeekStormInstantSearchAdapter {
     return data;
   }
 
-   async search(requests) {
-    const seekStormQueries = requests.map((req) => this.mapAlgoliaToSeekStorm(req));
-
+  async search(requests) {
     try {
       const responses = await Promise.all(
-        seekStormQueries.map(async (q) => {
-          const [queryRes, minMax] = await Promise.all([
-            fetch(`${this.host}/api/v1/index/${q.indexId}/query`, {
+        requests.map(async (request) => {
+          const { indexId } = this.resolveIndex(request.indexName);
+          const minMax = await this.getFacetsMinMax(indexId);
+          const { payload } = this.mapAlgoliaToSeekStorm(request, minMax);
+          const queryRes = await fetch(`${this.host}/api/v1/index/${indexId}/query`, {
               method: 'POST',
               headers: { 'content-type': 'application/json', apikey: this.apiKey },
-              body: JSON.stringify(q.payload),
+              body: JSON.stringify(payload),
             }).then((res) => {
               if (!res.ok) throw new Error(`SeekStorm error! Status: ${res.status}`);
               return res.json();
-            }),
-            this.getFacetsMinMax(q.indexId),
-          ]);
+            });
           return { queryRes, minMax };
         })
       );
@@ -129,9 +127,9 @@ class SeekStormInstantSearchAdapter {
           : facets?.[facetName] || [];
         return {
           facetHits: values.map((v) => ({
-            value: v.value,
-            count: v.count,
-            highlighted: v.value,
+            value: Array.isArray(v) ? v[0] : v.value,
+            count: Array.isArray(v) ? v[1] : v.count,
+            highlighted: Array.isArray(v) ? v[0] : v.value,
           })),
         };
       })
@@ -156,7 +154,7 @@ class SeekStormInstantSearchAdapter {
     return { indexId: this.indexMap[indexName], sort: null };
   }
 
-  mapAlgoliaToSeekStorm(algoliaRequest) {
+  mapAlgoliaToSeekStorm(algoliaRequest, facetsMinMax = {}) {
     const params = algoliaRequest.params || {};
     const page = params.page || 0;
     const hitsPerPage = params.hitsPerPage || 20;
@@ -175,7 +173,7 @@ class SeekStormInstantSearchAdapter {
       enable_empty_query: true, // allow empty query to return all facet values
     };
 
-    const facetFilter = this.buildFacetFilter(params);
+    const facetFilter = this.buildFacetFilter(params, facetsMinMax);
     if (facetFilter.length) payload.facet_filter = facetFilter;
 
     const queryFacets = this.buildQueryFacets(params.facets);
@@ -189,7 +187,7 @@ class SeekStormInstantSearchAdapter {
 
   // Translates Algolia's facetFilters (["brand:Apple", ["type:Laptop","type:Tablet"]])
   // and numericFilters (["price>=10", "price<=50"]) into SeekStorm's typed facet_filter.
-buildFacetFilter(params) {
+  buildFacetFilter(params, facetsMinMax = {}) {
   const filters = [];
   const byField = {};
 
@@ -236,6 +234,13 @@ buildFacetFilter(params) {
   Object.entries(numericRanges).forEach(([field, range]) => {
     const fieldType = this.facetTypes[field]; // e.g. 'F64'
     if (!fieldType) return;
+    const bounds = facetsMinMax[field];
+    if (range.start === null) range.start = bounds?.min;
+    if (range.end === null) range.end = bounds?.max;
+    if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+      console.warn(`No numeric bounds available for "${field}" — skipping filter.`);
+      return;
+    }
     if (range.end !== null) {
       // Nudge the upper bound past the requested max so it's included despite
       // the exclusive Range semantics. Epsilon should be smaller than any
@@ -251,7 +256,10 @@ buildFacetFilter(params) {
 
   buildQueryFacets(facetFields) {
     if (!facetFields) return [];
-    return facetFields
+    const requestedFields = facetFields === '*'
+      ? Object.keys(this.facetTypes)
+      : Array.isArray(facetFields) ? facetFields : [];
+    return requestedFields
       .map((field) => {
         const fieldType = this.facetTypes[field];
         if (!fieldType) {
@@ -284,6 +292,15 @@ buildFacetFilter(params) {
       }
     });
 
+    const facets = this.formatFacets(seekStormData.facets);
+    // InstantSearch associates facets_stats with an attribute only while it
+    // processes that attribute in `facets`.
+    Object.keys(facetsStats).forEach((field) => {
+      if (!Object.prototype.hasOwnProperty.call(facets, field)) {
+        facets[field] = {};
+      }
+    });
+
     return {
       hits: rawHits.map((h) => ({
         objectID: h._id ?? h.id,
@@ -294,7 +311,7 @@ buildFacetFilter(params) {
       page: algoliaRequest.params.page || 0,
       nbPages: Math.ceil(totalResults / hitsPerPage),
       hitsPerPage,
-      facets: this.formatFacets(seekStormData.facets),
+      facets,
       facets_stats: facetsStats,
       processingTimeMS: seekStormData.time_ms ?? 1,
     };
@@ -313,7 +330,9 @@ buildFacetFilter(params) {
     entries.forEach(([field, values]) => {
       algoliaFacets[field] = {};
       (values || []).forEach((v) => {
-        algoliaFacets[field][v.value] = v.count;
+        const value = Array.isArray(v) ? v[0] : v.value;
+        const count = Array.isArray(v) ? v[1] : v.count;
+        algoliaFacets[field][value] = count;
       });
     });
     return algoliaFacets;
