@@ -1,6 +1,7 @@
 # SeekStorm instant search adapter
 
-This client-side adapter allows [Algolia's InstantSearch.js, React InstantSearch, or Vue InstantSearch widgets](https://github.com/algolia/instantsearch) to be powered by [SeekStorm](https://github.com/SeekStorm/SeekStorm) as the backend engine.
+This client-side adapter allows you to use [Algolia's InstantSearch.js, React InstantSearch, or Vue InstantSearch widget library](https://github.com/algolia/instantsearch) to build modern search UI, while using [SeekStorm](https://github.com/SeekStorm/SeekStorm) as the search backend.  
+It also enables you to simply switch the search backend to SeekStorm, while continue using your existing search UI based on Algolia's InstantSearch.
 
 ```javascript
 import SeekStormInstantSearchAdapter from 'seekstorm-instantsearch-adapter';
