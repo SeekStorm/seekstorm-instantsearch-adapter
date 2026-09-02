@@ -16,6 +16,7 @@ class SeekStormInstantSearchAdapter {
     this.indexMap = config.indexMap || {};
     this.facetTypes = config.facetTypes || {};
     this.realtime = config.realtime ?? false;
+    this.highlightFields = config.highlightFields || ['name', 'description'];
 
     // Numeric field types, used to know which facetTypes entries are range facets
     // (these are the ones whose min/max we need for rangeSlider bounds).
@@ -171,6 +172,15 @@ class SeekStormInstantSearchAdapter {
       result_type: 'TopkCount',
       realtime: this.realtime,
       enable_empty_query: true, // allow empty query to return all facet values
+      highlights: this.highlightFields.map((field) => ({
+        field,
+        fragment_number: 0,
+        fragment_size: 0,
+        highlight_markup: true,
+        name: `_instantsearch_highlight_${field}`,
+        pre_tags: '__ais-highlight__',
+        post_tags: '__/ais-highlight__',
+      })),
     };
 
     const facetFilter = this.buildFacetFilter(params, facetsMinMax);
@@ -309,8 +319,8 @@ class SeekStormInstantSearchAdapter {
           _id: h._id ?? h.id,
           ...fields,
           _highlightResult: {
-            name: { value: this.escapeHighlightValue(fields.name) },
-            description: { value: this.escapeHighlightValue(fields.description) },
+            name: { value: this.highlightValue(fields, 'name', algoliaRequest.params.query) },
+            description: { value: this.highlightValue(fields, 'description', algoliaRequest.params.query) },
           },
         };
       }),
@@ -324,13 +334,13 @@ class SeekStormInstantSearchAdapter {
     };
   }
 
-  escapeHighlightValue(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+  highlightValue(fields, field, query) {
+    const value = query
+      ? fields[`_instantsearch_highlight_${field}`] ?? fields[field]
+      : fields[field];
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = String(value ?? '');
+    return textarea.value;
   }
 
   formatFacets(seekStormFacets) {
