@@ -21,6 +21,8 @@ Algolia's InstantSearch.js
 seekstorm-instantsearch-adapter  
             ↓  
 SeekStorm server (self-hosted or SeekStorm cloud)  
+            ↑
+bestbuy_dataset.json (instant-search-demo\dataset_import)
 ```
 
 ## Modifications made
