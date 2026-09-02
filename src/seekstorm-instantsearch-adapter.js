@@ -302,11 +302,18 @@ class SeekStormInstantSearchAdapter {
     });
 
     return {
-      hits: rawHits.map((h) => ({
-        objectID: h._id ?? h.id,
-        _id: h._id ?? h.id,
-        ...(h.fields || h),
-      })),
+      hits: rawHits.map((h) => {
+        const fields = h.fields || h;
+        return {
+          objectID: h._id ?? h.id ?? fields.objectID,
+          _id: h._id ?? h.id,
+          ...fields,
+          _highlightResult: {
+            name: { value: this.escapeHighlightValue(fields.name) },
+            description: { value: this.escapeHighlightValue(fields.description) },
+          },
+        };
+      }),
       nbHits: totalResults,
       page: algoliaRequest.params.page || 0,
       nbPages: Math.ceil(totalResults / hitsPerPage),
@@ -315,6 +322,15 @@ class SeekStormInstantSearchAdapter {
       facets_stats: facetsStats,
       processingTimeMS: seekStormData.time_ms ?? 1,
     };
+  }
+
+  escapeHighlightValue(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   formatFacets(seekStormFacets) {
