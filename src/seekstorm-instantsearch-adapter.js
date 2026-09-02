@@ -15,6 +15,7 @@ class SeekStormInstantSearchAdapter {
     this.apiKey = config.apiKey;
     this.indexMap = config.indexMap || {};
     this.facetTypes = config.facetTypes || {};
+      this.numericFacetRanges = config.numericFacetRanges || {};
     this.realtime = config.realtime ?? false;
     this.highlightFields = config.highlightFields || ['name', 'description'];
 
@@ -93,13 +94,16 @@ class SeekStormInstantSearchAdapter {
   async searchForFacetValues(requests) {
     const results = await Promise.all(
       requests.map(async (req) => {
-        const { facetName, facetQuery, indexName, params = {} } = req;
+        const { indexName, params = {} } = req;
+        const facetName = req.facetName ?? params.facetName;
+        const facetQuery = req.facetQuery ?? params.facetQuery;
         const { indexId } = this.resolveIndex(indexName);
         const fieldType = this.facetTypes[facetName];
         if (!fieldType) {
           console.warn(`No facetTypes entry for "${facetName}" — cannot search facet values.`);
           return { facetHits: [] };
         }
+        const prefix = (facetQuery || '').replace(/^./, (character) => character.toUpperCase());
 
         const payload = {
           query: params.query || '',
@@ -108,7 +112,7 @@ class SeekStormInstantSearchAdapter {
           result_type: 'TopkCount',
           realtime: this.realtime,
           query_facets: [
-            { [fieldType]: { field: facetName, prefix: facetQuery || '', length: 20 } },
+            { [fieldType]: { field: facetName, prefix, length: 20 } },
           ],
           enable_empty_query: true, // allow empty query to return all facet values
         };
@@ -135,7 +139,7 @@ class SeekStormInstantSearchAdapter {
         };
       })
     );
-    return { results };
+    return results;
   }
 
   // Splits Algolia's virtual "replica" index names (used by the sortBy widget)
@@ -200,8 +204,14 @@ class SeekStormInstantSearchAdapter {
   buildFacetFilter(params, facetsMinMax = {}) {
   const filters = [];
   const byField = {};
+  const numericSelections = {};
 
   const addStringFilter = (attr, value) => {
+    if (this.numericFieldTypes.has(this.facetTypes[attr]) && Number.isFinite(Number(value))) {
+      numericSelections[attr] = numericSelections[attr] || [];
+      numericSelections[attr].push(Number(value));
+      return;
+    }
     byField[attr] = byField[attr] || new Set();
     byField[attr].add(value);
   };
@@ -241,6 +251,16 @@ class SeekStormInstantSearchAdapter {
     if (op === '<=') numericRanges[field].end = Number(value);
   });
 
+  // ratingMenu represents "4 & up" as the OR facet selection ["rating:4",
+  // "rating:5"]. SeekStorm numeric facets use one half-open typed range.
+  Object.entries(numericSelections).forEach(([field, values]) => {
+    numericRanges[field] = {
+      start: Math.min(...values),
+      end: Math.max(...values) + 1,
+      inclusiveEnd: false,
+    };
+  });
+
   Object.entries(numericRanges).forEach(([field, range]) => {
     const fieldType = this.facetTypes[field]; // e.g. 'F64'
     if (!fieldType) return;
@@ -251,13 +271,14 @@ class SeekStormInstantSearchAdapter {
       console.warn(`No numeric bounds available for "${field}" — skipping filter.`);
       return;
     }
-    if (range.end !== null) {
+    if (range.end !== null && range.inclusiveEnd !== false) {
       // Nudge the upper bound past the requested max so it's included despite
       // the exclusive Range semantics. Epsilon should be smaller than any
       // meaningful price difference in your dataset (adjust for your currency's
       // smallest denomination, or use a bigger nudge for integer-valued fields).
       range.end += 0.01;
     }
+    delete range.inclusiveEnd;
     filters.push({ [fieldType]: { field, filter: range } });
   });
 
@@ -276,10 +297,17 @@ class SeekStormInstantSearchAdapter {
           console.warn(`No facetTypes entry for "${field}" — skipping facet request.`);
           return null;
         }
-        // Numeric QueryFacet variants use a {range_type, ranges} shape, not
-        // {prefix, length} — numeric min/max is fetched separately via
-        // getFacetsMinMax, so skip them here rather than sending a malformed payload.
-        if (this.numericFieldTypes.has(fieldType)) return null;
+        if (this.numericFieldTypes.has(fieldType)) {
+          const rangeConfig = this.numericFacetRanges[field];
+          if (!rangeConfig) return null;
+          return {
+            [fieldType]: {
+              field,
+              range_type: rangeConfig.rangeType,
+              ranges: rangeConfig.ranges.map(({ label, start }) => [label, start]),
+            },
+          };
+        }
         return { [fieldType]: { field, prefix: '', length: 1000 } };
       })
       .filter(Boolean);

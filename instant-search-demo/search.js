@@ -18,6 +18,20 @@ app({
     categories: 'StringSet32',
     type: 'String32',
     price: 'F64',
+    rating: 'U8',
+  },
+  numericFacetRanges: {
+    rating: {
+      rangeType: 'CountAboveRange',
+      ranges: [
+        { label: '0', start: 0 },
+        { label: '1', start: 1 },
+        { label: '2', start: 2 },
+        { label: '3', start: 3 },
+        { label: '4', start: 4 },
+        { label: '5', start: 5 },
+      ],
+    },
   },
 
 });
@@ -40,6 +54,7 @@ function app(opts) {
     apiKey: opts.apiKey,
     indexMap: { [opts.indexName]: opts.indexId },
     facetTypes: opts.facetTypes,
+    numericFacetRanges: opts.numericFacetRanges,
   });
 
   const search = instantsearch({
@@ -107,17 +122,23 @@ function app(opts) {
       templates: {
         header: getHeaderTemplate('category'),
       },
-    })(instantsearch.widgets.hierarchicalMenu)({
+    })(instantsearch.widgets.refinementList)({
       container: '#hierarchical-categories',
-      attributes: [
-        'hierarchicalCategories.lvl0',
-        'hierarchicalCategories.lvl1',
-        'hierarchicalCategories.lvl2',
-      ],
-      showParentLevel: true,
+      attribute: 'categories',
+      limit: 10,
+      showMore: true,
+      showMoreLimit: 20,
       templates: {
-        item:
-          '<a href="{{url}}" class="facet-item {{#isRefined}}active{{/isRefined}}"><span class="facet-name"><i class="fa fa-angle-right"></i> {{label}}</span class="facet-name"><span class="ais-HierarchicalMenu-count">{{count}}</span></a>', // eslint-disable-line
+        showMoreText: `
+          {{#isShowingMore}}
+            <span class="isShowingLess"></span>
+            Show less
+          {{/isShowingMore}}
+          {{^isShowingMore}}
+            <span class="isShowingMore"></span>
+            Show more
+          {{/isShowingMore}}
+        `,
       },
     }),
     instantsearch.widgets.panel({
@@ -154,6 +175,7 @@ function app(opts) {
     })(instantsearch.widgets.rangeSlider)({
       container: '#price',
       attribute: 'price',
+      max: 5000,
       tooltips: {
         format(rawValue) {
           return `$${Math.round(rawValue).toLocaleString()}`;

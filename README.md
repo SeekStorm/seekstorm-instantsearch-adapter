@@ -29,14 +29,14 @@ bestbuy_dataset.json (instant-search-demo\dataset_import)
 
 The following modifications were made to the fork of [Algolia's instant search demo](https://github.com/algolia/instant-search-demo) (located in the instant-search-demo folder of this repository) in order to switch the backend from Algolia to SeekStorm:
 
-1. `index-simplified.html`
+1. `index.html`
 
 ```html
   <!-- <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.0.3/dist/algoliasearch-lite.umd.js"></script> -->
   <script src="../src/seekstorm-instantsearch-adapter.js"></script>
 ```
 
-2. `search-simplified.js`
+2. `search.js`
 
 ```js
 app({
@@ -105,6 +105,7 @@ content-type: application/json
         { "field": "categories",  "field_type": "StringSet32", "store": true, "index_lexical": false, "facet": true },
         { "field": "brand",       "field_type": "String32", "store": true,  "index_lexical": false, "facet": true },
         { "field": "type",        "field_type": "String32", "store": true,  "index_lexical": false, "facet": true },
+        { "field": "rating",      "field_type": "U8",      "store": true,  "index_lexical": false, "facet": true },
         { "field": "price",       "field_type": "F64",      "store": true,  "index_lexical": false, "facet": true }
     ], 
     "index_name": "test_index",
@@ -120,7 +121,7 @@ content-type: application/json
 ingest {...full local path...}\seekstorm-instantsearch-adapter\instant-search-demo\dataset_import\bestbuy_dataset.json
 ```
 
-6. Start the demo by opening [instant-search-demo\index-simplified.html](instant-search-demo\index-simplified.html) in the browser.
+6. Start the demo by opening [instant-search-demo\index.html](instant-search-demo\index.html) in the browser.
 7. We just demonstrated how the seekstorm-instantsearch-adapter allows you to switch any search frontend using Algolia InstantSearch.js  
 from the Algolia API backend to a self-hosted SeekStorm server or the SeekStorm search-as-a-service.
 
