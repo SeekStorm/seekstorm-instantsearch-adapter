@@ -290,7 +290,7 @@ class SeekStormInstantSearchAdapter {
 
     const rawHits = seekStormData.hits || seekStormData.results || [];
     const totalResults =
-      seekStormData.result_count ?? seekStormData.total_results ?? rawHits.length;
+      seekStormData.count_total ?? seekStormData.result_count ?? seekStormData.total_results ?? rawHits.length;
 
     // Only surface facets_stats for fields the widget actually asked about
     // (Algolia's numericFilters/rangeSlider config), and only numeric field types.
@@ -330,7 +330,9 @@ class SeekStormInstantSearchAdapter {
       hitsPerPage,
       facets,
       facets_stats: facetsStats,
-      processingTimeMS: seekStormData.time_ms ?? 1,
+      processingTimeMS: seekStormData.time
+        ? Math.round(seekStormData.time / 1_000_000)
+        : seekStormData.time_ms ?? 1,
     };
   }
 
