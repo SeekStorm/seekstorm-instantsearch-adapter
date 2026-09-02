@@ -388,7 +388,9 @@ class SeekStormInstantSearchAdapter {
       (values || []).forEach((v) => {
         const value = Array.isArray(v) ? v[0] : v.value;
         const count = Array.isArray(v) ? v[1] : v.count;
-        algoliaFacets[field][value] = count;
+        if (value !== null && value !== undefined && String(value).trim() !== '') {
+          algoliaFacets[field][value] = count;
+        }
       });
     });
     return algoliaFacets;

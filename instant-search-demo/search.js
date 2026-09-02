@@ -22,9 +22,8 @@ app({
   },
   numericFacetRanges: {
     rating: {
-      rangeType: 'CountAboveRange',
+      rangeType: 'CountWithinRange',
       ranges: [
-        { label: '0', start: 0 },
         { label: '1', start: 1 },
         { label: '2', start: 2 },
         { label: '3', start: 3 },
@@ -216,6 +215,7 @@ function app(opts) {
       attribute: 'type',
       limit: 10,
       showMore: true,
+      sortBy: ['isRefined', 'count:desc', 'name:asc'],
       templates: {
         showMoreText: `
           {{#isShowingMore}}
