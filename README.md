@@ -9,17 +9,19 @@ import SeekStormInstantSearchAdapter from 'seekstorm-instantsearch-adapter';
 
 ## SeekStorm instant search demo
 This [instant search demo](https://github.com/SeekStorm/instant-search-demo) is a fork of [Algolia's instant search demo](https://github.com/algolia/instant-search-demo). It demonstrates how to uses [Algolia Instant-Search](https://github.com/algolia/instantsearch) to create a result page for an e-commerce website.  
-The actual search results are provided via the [SeekStorm instant search adapter](https://github.com/SeekStorm/seekstorm_instant_search) by the [SeekStorm server](https://github.com/SeekStorm/SeekStorm) REST API that provides a hosted full-text, numerical and faceted search.
+The actual search results are provided via the [SeekStorm instant search adapter](https://github.com/SeekStorm/seekstorm_instant_search) by the [SeekStorm server](https://github.com/SeekStorm/SeekStorm) REST API that provides a vector &amp; lexical search.
 
-## How it works
+### How it works
 
-instant-search-demo demo (e-commerce website)  
-↓  
+```
+instant-search-demo (e-commerce website demo)  
+            ↓  
 Algolia's InstantSearch.js  
-↓  
+            ↓  
 seekstorm-instantsearch-adapter  
-↓  
+            ↓  
 SeekStorm server (self-hosted or SeekStorm cloud)  
+```
 
 ## Modifications made
 
@@ -79,7 +81,7 @@ function app(opts) {
   });
 ```
 
-## Steps
+## Steps to run the demo
 
 1. Start the SeekStorm server, either after cloning the [SeekStorm repository](https://github.com/SeekStorm/SeekStorm/tree/main/seekstorm_server) and building via `cargo build --release`, or from the [Docker image](https://hub.docker.com/r/wolfgarbe/seekstorm_server).
 2. Create a demo API key, using the SeekStorm server console command `create` or via the REST API.
