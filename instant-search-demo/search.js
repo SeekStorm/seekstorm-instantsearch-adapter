@@ -84,6 +84,7 @@ function app(opts) {
           /* eslint-disable no-param-reassign */
           item.starsLayout = getStarsHTML(item.rating);
           item.categories = getCategoryBreadcrumb(item);
+          item.popularity = item.popularity ?? 0;
           return item;
         });
       },
@@ -254,11 +255,10 @@ function getCategoryBreadcrumb(item) {
 function getStarsHTML(rating, maxRating) {
   let html = '';
   const newRating = maxRating || 5;
+  const currentRating = Number(rating) || 0;
 
   for (let i = 0; i < newRating; ++i) {
-    html += `<span class="ais-star-rating--star${
-      i < rating ? '' : '__empty'
-    }"></span>`;
+    html += `<i class="fa fa-star${i < currentRating ? '' : '-o'}"></i>`;
   }
 
   return html;

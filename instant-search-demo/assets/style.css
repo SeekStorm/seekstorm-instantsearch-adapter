@@ -144,6 +144,12 @@ header img {
   margin: 4px 0;
   color: #868686;
 }
+.hit-stars .fa-star {
+  color: #fbae00;
+}
+.hit-stars .fa-star-o {
+  color: #c9c9c9;
+}
 
 .hit-content .hit-price {
   float: right;

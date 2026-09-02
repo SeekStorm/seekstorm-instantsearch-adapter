@@ -56,8 +56,21 @@ app({
     categories: 'StringSet32',
     type: 'String32',
     price: 'F64',
+    rating: 'U8',
   },
-
+  numericFacetRanges: {
+    rating: {
+      rangeType: 'CountAboveRange',
+      ranges: [
+        { label: '0', start: 0 },
+        { label: '1', start: 1 },
+        { label: '2', start: 2 },
+        { label: '3', start: 3 },
+        { label: '4', start: 4 },
+        { label: '5', start: 5 },
+      ],
+    },
+  },
 
 });
 
@@ -74,6 +87,7 @@ function app(opts) {
     apiKey: opts.apiKey,
     indexMap: { [opts.indexName]: opts.indexId },
     facetTypes: opts.facetTypes,
+    numericFacetRanges: opts.numericFacetRanges,
   });
 
   const search = instantsearch({
@@ -106,6 +120,7 @@ content-type: application/json
         { "field": "brand",       "field_type": "String32", "store": true,  "index_lexical": false, "facet": true },
         { "field": "type",        "field_type": "String32", "store": true,  "index_lexical": false, "facet": true },
         { "field": "rating",      "field_type": "U8",      "store": true,  "index_lexical": false, "facet": true },
+        { "field": "popularity",  "field_type": "U32",      "store": true,  "index_lexical": false, "facet": true  },
         { "field": "price",       "field_type": "F64",      "store": true,  "index_lexical": false, "facet": true }
     ], 
     "index_name": "test_index",
