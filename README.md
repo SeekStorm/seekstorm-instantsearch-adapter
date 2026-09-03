@@ -9,7 +9,7 @@ The actual search results are provided via the [SeekStorm instant search adapter
 
 | Instantsearch demo powered by Algolia | Instantsearch demo powered by SeekStorm |
 | :---: | :---: |
-| ![Description 1](instant-search-demo\screenshots\instantsearch_powered_by_algolia.png) | ![Description 2](instant-search-demo\screenshots\instantsearch_powered_by_seekstorm.png) |
+| <img src="instant-search-demo\screenshots\instantsearch_powered_by_algolia.png"> | <img src="instant-search-demo\screenshots\instantsearch_powered_by_seekstorm.png"> |
 
 ### How it works
 
