@@ -3,13 +3,13 @@
 This client-side adapter allows you to use [Algolia's InstantSearch.js, React InstantSearch, or Vue InstantSearch widget library](https://github.com/algolia/instantsearch) to build modern search UI, while using [SeekStorm](https://github.com/SeekStorm/SeekStorm) as the search backend.  
 It also enables you to simply switch the search backend to SeekStorm, while continue using your existing search UI based on Algolia's InstantSearch.
 
-```javascript
-import SeekStormInstantSearchAdapter from 'seekstorm-instantsearch-adapter';
-```
+## Instant search demo
+This [instant search demo](https://github.com/SeekStorm/seekstorm-instantsearch-adapter/tree/main/instant-search-demo) is a fork of [Algolia's instant search demo](https://github.com/algolia/instant-search-demo). It demonstrates how to uses [Algolia Instant-Search](https://github.com/algolia/instantsearch) to create a result page for an e-commerce website - but powered by the SeekStorm server backend.  
+The actual search results are provided via the [SeekStorm instant search adapter](https://github.com/SeekStorm/seekstorm-instantsearch-adapter) by the [SeekStorm server](https://github.com/SeekStorm/SeekStorm) REST API that provides a vector &amp; lexical search.
 
-## SeekStorm instant search demo
-This [instant search demo](https://github.com/SeekStorm/instant-search-demo) is a fork of [Algolia's instant search demo](https://github.com/algolia/instant-search-demo). It demonstrates how to uses [Algolia Instant-Search](https://github.com/algolia/instantsearch) to create a result page for an e-commerce website.  
-The actual search results are provided via the [SeekStorm instant search adapter](https://github.com/SeekStorm/seekstorm_instant_search) by the [SeekStorm server](https://github.com/SeekStorm/SeekStorm) REST API that provides a vector &amp; lexical search.
+| Instantsearch demo powered by Algolia | Instantsearch demo powered by SeekStorm |
+| :---: | :---: |
+| ![Description 1](instant-search-demo\screenshots\instantsearch_powered_by_algolia.png) | ![Description 2](instant-search-demo\screenshots\instantsearch_powered_by_seekstorm.png) |
 
 ### How it works
 
