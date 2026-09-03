@@ -1,19 +1,17 @@
-**Note:** this repository is hosting the demo that was previously located at [algolia/examples](https://github.com/algolia/examples/tree/master/instant-search/instantsearch.js/)
-
------
 
 Instant-Search Demo
 ====================
 
-This is a sample project of an [Algolia](http://www.algolia.com) Instant-Search result page on an e-commerce website. Algolia is a Search API that provides a hosted full-text, numerical and faceted search.
+This [instant search demo](https://github.com/SeekStorm/seekstorm-instantsearch-adapter/tree/main/instant-search-demo) is a fork of [Algolia's instant search demo](https://github.com/algolia/instant-search-demo). It demonstrates how to uses [Algolia Instant-Search](https://github.com/algolia/instantsearch) to create a result page for an e-commerce website - but powered by the SeekStorm server backend.  
+The actual search results are provided via the [SeekStorm instant search adapter](https://github.com/SeekStorm/seekstorm-instantsearch-adapter) by the [SeekStorm server](https://github.com/SeekStorm/SeekStorm) REST API that provides a vector &amp; lexical search.
 
-## Demos
-Try out the [demo](https://preview.algolia.com/instantsearch/)
-![Instant search](screenshots/instant-search-default.gif)
+| Instantsearch demo powered by Algolia | Instantsearch demo powered by SeekStorm |
+| :---: | :---: |
+| <img src="screenshots\instantsearch_powered_by_algolia.png"> | <img src="screenshots\instantsearch_powered_by_seekstorm.png"> |
 
 ### Simplified version
 This project also includes a simplified version of the implementation that includes a few less filtering options.
-The code is available in the files `index-simplified.html` and `search-simplified.js`. You can [see it live here](https://preview.algolia.com/instantsearch/index-simplified.html).
+The code is available in the files `index-simplified.html` and `search-simplified.js`. 
 
 ## Features
 * Full-JavaScript/frontend implementation based on [instantsearch.js](https://community.algolia.com/instantsearch.js/)
@@ -29,36 +27,6 @@ The code is available in the files `index-simplified.html` and `search-simplifie
   * By Highest Price
   * By Lowest Price
 * Backup search parameters in the URL
-
-## Run and develop locally
-
-First, [install nvm](https://github.com/creationix/nvm#installation), then run:
-
-```sh
-git clone git@github.com:algolia/instant-search-demo.git
-cd instant-search-demo
-nvm use
-npm install
-npm start
-open http://localhost:3000
-```
-
-We've included some credentials in the code allowing you to test the demo without any Algolia account.
-
-### Data import
-If you want to replicate this demo using your own Algolia credentials that you can obtain creating a free account on Algolia.com.
-
-Just install the Ruby `algoliasearch` gem and use the `push.rb` script to send the data and automatically configure the product index (same for both versions).
-
-```sh
-$ gem install algoliasearch
-$ ./dataset_import/push.rb YourApplicationID YourAdminAPIKey YourIndexName
-```
-
-Then, you'll need to replace the demo credentials with your own:
-- in `search.js` and `search-simplified.js`, set your own `APPLICATION_ID` instead of `"latency"` (which is our demo `APPLICATION_ID`),
-- in `search.js` and `search-simplified.js`, set your own `SEARCH_ONLY_API_KEY` instead of `"6be0576ff61c053d5f9a3225e2a90f76"`,
-- in `search.js` and `search-simplified.js`, set your own `index` name instead of `"instant_search"`.
 
 
 We've extracted 20 000+ products from the [Best Buy Developer API](https://developer.bestbuy.com). You can find the associated documentation [here](https://developer.bestbuy.com/documentation/products-api).
