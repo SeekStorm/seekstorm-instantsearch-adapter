@@ -29,7 +29,7 @@ The code is available in the files `index-simplified.html` and `search-simplifie
 * Backup search parameters in the URL
 
 
-We've extracted 20 000+ products from the [Best Buy Developer API](https://developer.bestbuy.com). You can find the associated documentation [here](https://developer.bestbuy.com/documentation/products-api).
+20 000+ products were extracted from the [Best Buy Developer API](https://developer.bestbuy.com). You can find the associated documentation [here](https://developer.bestbuy.com/documentation/products-api).
 
 ## Tutorial
 
