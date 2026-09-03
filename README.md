@@ -137,8 +137,8 @@ ingest {...full local path...}\seekstorm-instantsearch-adapter\instant-search-de
 ```
 
 6. Start the demo by opening [instant-search-demo\index.html](instant-search-demo\index.html) in the browser.
-7. We just demonstrated how the seekstorm-instantsearch-adapter allows you to switch any search frontend using Algolia InstantSearch.js 
-from the Algolia API backend to a self-hosted SeekStorm server or the SeekStorm search-as-a-service.
+7. We just demonstrated how the `seekstorm-instantsearch-adapter` allows you to **switch** any search frontend using Algolia InstantSearch.js 
+**from the Algolia API** backend **to a self-hosted SeekStorm server** or the SeekStorm search-as-a-service.
 
 
 
