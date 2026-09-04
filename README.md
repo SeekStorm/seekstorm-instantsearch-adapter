@@ -146,7 +146,7 @@ content-type: application/json
 ```
 
 4. Clone this repository (includes both seekstorm-instantsearch-adapter and instant-search-demo)
-5. Ingest the *bestbuy_dataset.json* dataset via the console command "ingest" or via the REST API.
+5. Ingest the `bestbuy_dataset.json` dataset via the console command `ingest` or via the REST API.
 
 ```shell
 ingest {...full local path...}\seekstorm-instantsearch-adapter\instant-search-demo\dataset_import\bestbuy_dataset.json
