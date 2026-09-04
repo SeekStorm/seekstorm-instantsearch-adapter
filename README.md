@@ -33,7 +33,7 @@ The following modifications were made to the fork of [Algolia's instant search d
 
 ```html
   <!-- <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.0.3/dist/algoliasearch-lite.umd.js"></script> -->
-  <script src="../src/seekstorm-instantsearch-adapter.js"></script>
+  <script src="../dist/seekstorm-instantsearch-adapter.umd.js"></script>
 ```
 
 2. `search.js`
@@ -96,6 +96,40 @@ function app(opts) {
     routing: true,
   });
 ```
+
+## Installation
+
+Install the adapter from npm:
+
+```shell
+npm install seekstorm-instantsearch-adapter
+```
+
+Use it with a bundler or an ESM-capable runtime:
+
+```js
+import SeekStormInstantSearchAdapter from 'seekstorm-instantsearch-adapter';
+```
+
+For browser script tags, use the UMD bundle, which exposes
+`SeekStormInstantSearchAdapter` as a global:
+
+```html
+<script src="https://unpkg.com/seekstorm-instantsearch-adapter/dist/seekstorm-instantsearch-adapter.umd.js"></script>
+```
+
+## Publishing
+
+Publishing is triggered by pushing a version tag such as `v0.1.0`. The GitHub
+Actions workflow uses npm Trusted Publishing, so it does not require an npm token.
+Before the first release, configure this package's Trusted Publisher in npm with:
+
+- GitHub user or organization: `SeekStorm`
+- Repository: `seekstorm-instantsearch-adapter`
+- Workflow filename: `publish.yml`
+- Allowed action: `npm publish`
+
+The package repository URL must remain `https://github.com/SeekStorm/seekstorm-instantsearch-adapter` for Trusted Publishing to authenticate the workflow.
 
 ## Steps to run the demo
 

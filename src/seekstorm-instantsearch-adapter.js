@@ -396,3 +396,5 @@ class SeekStormInstantSearchAdapter {
     return algoliaFacets;
   }
 }
+
+export default SeekStormInstantSearchAdapter;

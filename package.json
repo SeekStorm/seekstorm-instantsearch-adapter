@@ -1,0 +1,47 @@
+{
+  "name": "seekstorm-instantsearch-adapter",
+  "version": "0.1.0",
+  "description": "An adapter to use Algolia's InstantSearch.js UI library with the SeekStorm REST API",
+  "keywords": [
+    "search",
+    "information",
+    "retrieval"
+  ],
+  "author": "Wolf Garbe <wolf.garbe@seekstorm.com>",
+  "license": "MIT",
+  "homepage": "https://seekstorm.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SeekStorm/seekstorm-instantsearch-adapter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SeekStorm/seekstorm-instantsearch-adapter/issues"
+  },
+  "type": "module",
+  "main": "./dist/seekstorm-instantsearch-adapter.cjs",
+  "module": "./dist/seekstorm-instantsearch-adapter.js",
+  "browser": "./dist/seekstorm-instantsearch-adapter.umd.js",
+  "unpkg": "./dist/seekstorm-instantsearch-adapter.umd.js",
+  "jsdelivr": "./dist/seekstorm-instantsearch-adapter.umd.js",
+  "exports": {
+    ".": {
+      "import": "./dist/seekstorm-instantsearch-adapter.js",
+      "require": "./dist/seekstorm-instantsearch-adapter.cjs",
+      "default": "./dist/seekstorm-instantsearch-adapter.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "esbuild src/seekstorm-instantsearch-adapter.js --bundle --format=esm --outfile=dist/seekstorm-instantsearch-adapter.js && esbuild scripts/commonjs.js --bundle --format=cjs --platform=node --outfile=dist/seekstorm-instantsearch-adapter.cjs && esbuild scripts/browser-global.js --bundle --format=iife --outfile=dist/seekstorm-instantsearch-adapter.umd.js",
+    "test": "npm run build && node --input-type=module --eval \"import Adapter from './dist/seekstorm-instantsearch-adapter.js'; if (typeof Adapter !== 'function') process.exit(1);\" && node --eval \"const Adapter = require('./dist/seekstorm-instantsearch-adapter.cjs'); if (typeof Adapter !== 'function') process.exit(1);\" && node --input-type=module --eval \"import { readFileSync } from 'node:fs'; import vm from 'node:vm'; const context = { globalThis: {} }; vm.runInNewContext(readFileSync('./dist/seekstorm-instantsearch-adapter.umd.js', 'utf8'), context); if (typeof context.globalThis.SeekStormInstantSearchAdapter !== 'function') process.exit(1);\"",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.2"
+  }
+}
