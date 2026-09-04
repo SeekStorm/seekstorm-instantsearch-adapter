@@ -118,19 +118,6 @@ For browser script tags, use the UMD bundle, which exposes
 <script src="https://unpkg.com/seekstorm-instantsearch-adapter/dist/seekstorm-instantsearch-adapter.umd.js"></script>
 ```
 
-## Publishing
-
-Publishing is triggered by pushing a version tag such as `v0.1.0`. The GitHub
-Actions workflow uses npm Trusted Publishing, so it does not require an npm token.
-Before the first release, configure this package's Trusted Publisher in npm with:
-
-- GitHub user or organization: `SeekStorm`
-- Repository: `seekstorm-instantsearch-adapter`
-- Workflow filename: `publish.yml`
-- Allowed action: `npm publish`
-
-The package repository URL must remain `https://github.com/SeekStorm/seekstorm-instantsearch-adapter` for Trusted Publishing to authenticate the workflow.
-
 ## Steps to run the demo
 
 1. Start the SeekStorm server, either after cloning the [SeekStorm repository](https://github.com/SeekStorm/SeekStorm/tree/main/seekstorm_server) and building via `cargo build --release`, or from the [Docker image](https://hub.docker.com/r/wolfgarbe/seekstorm_server).
