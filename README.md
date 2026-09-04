@@ -100,7 +100,23 @@ function app(opts) {
 ## Steps to run the demo
 
 1. Start the SeekStorm server, either after cloning the [SeekStorm repository](https://github.com/SeekStorm/SeekStorm/tree/main/seekstorm_server) and building via `cargo build --release`, or from the [Docker image](https://hub.docker.com/r/wolfgarbe/seekstorm_server).
-2. Create a demo API key, using the SeekStorm server console command `create` or via the REST API.
+2. Create a demo API key, using the SeekStorm server console command `create` or via the REST API:
+
+```shell
+POST http://127.0.0.1:80/api/v1/apikey HTTP/1.1
+apikey: {use master API key displayed in the server console at startup}
+content-type: application/json
+
+{
+    "indices_max": 10,
+    "indices_size_max": 100000, 
+    "documents_max": 10000000, 
+    "operations_max": 10000000, 
+    "rate_limit": 100000,
+    "demo": true
+}
+```
+
 3. Create an index with the following schema via the REST API.
 
 ```json
